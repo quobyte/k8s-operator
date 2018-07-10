@@ -10,9 +10,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 
+	"github.com/quobyte/k8s-operator/pkg/utils"
+
 	"github.com/golang/glog"
 	types "k8s.io/apimachinery/pkg/types"
-	"operator/pkg/utils"
 )
 
 // GetPods Returns all the pods in cluster
@@ -23,13 +24,14 @@ func GetPods(client *kubernetes.Clientset) (*v1.PodList, error) {
 
 // LabelNodes updates labels on nodes.
 // op add,remove
-func LabelNodes(labelNodes []string, op, label string) {
+func LabelNodes(labelNodes []string, op, labelK, labelV string) {
 
 	for _, nodeName := range labelNodes {
 		if nodeName == "" {
 			continue
 		}
-		node, err := KubernetesClient.CoreV1().Nodes().Get(nodeName, metav1.GetOptions{})
+		nodeInCache, err := KubernetesClient.CoreV1().Nodes().Get(nodeName, metav1.GetOptions{})
+		node := nodeInCache.DeepCopy()
 		if err != nil {
 			glog.Errorf("Failed to get the node %s due to %v", nodeName, err)
 		} else {
@@ -40,9 +42,9 @@ func LabelNodes(labelNodes []string, op, label string) {
 			}
 			switch op {
 			case utils.OperationAdd:
-				labels[label] = "true"
+				labels[labelK] = labelV
 			case utils.OperationRemove:
-				delete(labels, label)
+				delete(labels, labelK)
 			}
 			node.SetLabels(labels)
 			newJSON, _ := json.Marshal(node)

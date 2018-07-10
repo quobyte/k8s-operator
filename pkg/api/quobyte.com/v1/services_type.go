@@ -5,7 +5,6 @@ import (
 )
 
 // +genclient
-// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type QuobyteService struct {
@@ -23,9 +22,8 @@ type QuobyteServiceSpec struct {
 	MetadataService `json:"metadata,omitempty"`
 }
 type Service struct {
-	Nodes         []string `json:nodes`
-	Image         string   `json:"image"`
-	RollingUpdate bool     `json:"rolling_updates_enabled"`
+	Nodes  []string `json:"nodes"`
+	DsName string   `json:"daemonSetName"`
 }
 type RegistryService struct {
 	Service

@@ -39,6 +39,7 @@ func CreateAllQuobyteCrd() error {
 				glog.Errorf("Failed to get the CRD %s definition\n", file.Name())
 				return err
 			}
+
 			_, err = APIServerClient.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
 			if err != nil {
 				if apierrors.IsAlreadyExists(err) {

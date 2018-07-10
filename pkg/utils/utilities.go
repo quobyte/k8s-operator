@@ -23,3 +23,11 @@ func GetQuobyteNodes(label string, K8sAPIClient *kubernetes.Clientset) (*v1.Node
 	}
 	return nodes, nil
 }
+
+func GetNodeNames(nodes *v1.NodeList) []string {
+	n := make([]string, 0)
+	for _, node := range nodes.Items {
+		n = append(n, node.Name)
+	}
+	return n
+}

@@ -5,7 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	examplecom "operator/pkg/api/quobyte.com"
+	examplecom "github.com/quobyte/k8s-operator/pkg/api/quobyte.com"
 )
 
 // SchemeGroupVersion is group version used to register these objects

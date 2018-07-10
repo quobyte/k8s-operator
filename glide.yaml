@@ -1,4 +1,4 @@
-package: qube
+package: operator
 import:
 - package: github.com/ghodss/yaml
   version: ^1.0.0
@@ -20,8 +20,9 @@ import:
   - pkg/util/runtime
   - pkg/util/wait
   - pkg/watch
+- package: k8s.io/code-generator
 - package: k8s.io/client-go
-  version: v5.0.0
+  version: v7.0.0
   subpackages:
   - discovery
   - discovery/fake
@@ -33,6 +34,7 @@ import:
   - util/flowcontrol
   - util/workqueue
 - package: k8s.io/apiextensions-apiserver
-  version: release-1.9
+  version: release-1.10
 - package: github.com/mattbaird/jsonpatch
 - package: github.com/evanphx/json-patch
+- package: github.com/gorilla/websocket

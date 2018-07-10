@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
-	"operator/pkg/controller"
-	"operator/pkg/resourcehandler"
-	"operator/pkg/web"
 	"os"
+
+	"github.com/quobyte/k8s-operator/pkg/controller"
+	"github.com/quobyte/k8s-operator/pkg/resourcehandler"
+	"github.com/quobyte/k8s-operator/pkg/utils"
+	"github.com/quobyte/k8s-operator/pkg/web"
 
 	"github.com/golang/glog"
 )
@@ -20,7 +22,7 @@ func main() {
 	resourcehandler.InitClient(kubeconfig)
 	if resourcehandler.KubernetesClient != nil {
 		glog.Info("Starting operator UI")
-		go web.StartWebServer(resourcehandler.KubernetesClient)
+		go web.StartWebServer()
 	}
 
 	err := resourcehandler.CreateAllQuobyteCrd()
@@ -28,6 +30,8 @@ func main() {
 		glog.Errorf("Terminating operator due to: \n %v", err)
 		os.Exit(1)
 	}
+
+	os.Remove(utils.StatusFile)
 	glog.Info("Starting operator")
-	controller.Start(resourcehandler.QclientConfig)
+	controller.Start(resourcehandler.CrdClient, resourcehandler.KubernetesClient)
 }

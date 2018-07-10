@@ -1,23 +1,21 @@
 package resourcehandler
 
 import (
-	"fmt"
-	quobytev1 "operator/pkg/kubernetes-actors/clientset/versioned"
 	"os"
+
+	quobytev1 "github.com/quobyte/k8s-operator/pkg/kubernetes-actors/clientset/versioned"
 
 	"github.com/golang/glog"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	crdv1 "operator/pkg/api/quobyte.com/v1"
 )
 
 var (
 	config           *rest.Config
-	QclientConfig    *quobytev1.Clientset
+	CrdClient        *quobytev1.Clientset
 	err              error
 	KubernetesClient *kubernetes.Clientset
 	APIServerClient  *apiextensionsclient.Clientset
@@ -44,16 +42,10 @@ func InitClient(kubeconfig string) {
 	if err != nil {
 		panic("Unable to create kubernetes client for the given configuration")
 	}
-	scheme := runtime.NewScheme()
-	if err := crdv1.AddToScheme(scheme); err != nil {
-		fmt.Println(err.Error())
-	}
-	cfg := *config
-	cfg.GroupVersion = &crdv1.SchemeGroupVersion
-	cfg.APIPath = "/apis"
-	QclientConfig, err = quobytev1.NewForConfig(&cfg)
+	CrdClient, err = quobytev1.NewForConfig(config)
+
 	if err != nil {
-		panic("Unable to create /apis client for the given configuration")
+		panic("Unable to create api extentions client for the given configuration")
 	}
 
 	cfg2 := *config
@@ -65,8 +57,5 @@ func InitClient(kubeconfig string) {
 
 	APIServerClient, err = apiextensionsclient.NewForConfig(&cfg2)
 
-	if err != nil {
-		panic("Unable to create api extentions client for the given configuration")
-	}
 	glog.Info("Initialized kubernetes cluster access clients")
 }

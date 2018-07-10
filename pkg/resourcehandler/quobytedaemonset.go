@@ -1,71 +1,42 @@
 package resourcehandler
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/golang/glog"
-	"k8s.io/api/apps/v1beta2"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	types "k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
-func updateVersionLabel(dep *extensionsv1beta1.DaemonSet, version string) {
-	labels := dep.GetLabels()
-	podLabels := dep.Spec.Template.ObjectMeta.GetLabels()
-	labels["version"] = version
-	podLabels["version"] = version
-	dep.SetLabels(labels)
-	dep.Spec.Template.ObjectMeta.SetLabels(podLabels)
-	glog.Infof("Updated labels to %s", version)
+func GetDaemonsetByName(name string) (*appsv1.DaemonSet, error) {
+	return KubernetesClient.Apps().DaemonSets(quobyteNameSpace).Get(name, metav1.GetOptions{})
 }
 
-//DeleteQuobyteDeployment deletes Quobyte daemonset with the given name.
-func DeleteQuobyteDeployment(name string) error {
-	err = KubernetesClient.ExtensionsV1beta1().DaemonSets(quobyteNameSpace).Delete(name, &metav1.DeleteOptions{})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+func IsRollingUpdateRequired(ds *appsv1.DaemonSet) bool {
+	return ds.Status.DesiredNumberScheduled != ds.Status.UpdatedNumberScheduled
 }
 
-func GetDaemonsetByName(name string) (*extensionsv1beta1.DaemonSet, error) {
-	return KubernetesClient.ExtensionsV1beta1().DaemonSets(quobyteNameSpace).Get(name, metav1.GetOptions{})
+func ParseDaemonSetForControlFlags(dsName string) (string, string, string, *appsv1.DaemonSet, error) {
+	if dsName == "" {
+		return "", "", "", nil, fmt.Errorf("Daemonset name is empty")
+	}
+	ds, err := GetDaemonsetByName(dsName)
+	if err != nil {
+		glog.Errorf("failed to get DaemonSet %s due to %v", dsName, err)
+		return "", "", "", nil, err
+	}
+	selectors := ds.Spec.Template.Spec.NodeSelector
+	var k, v string
+	for k, v = range selectors {
+		break
+	}
+	var lk, lv string
+	for lk, lv = range ds.Spec.Selector.MatchLabels {
+		break
+	}
+	return k, v, fmt.Sprintf("%s=%s", lk, lv), ds, err
 }
 
-// UpdateDaemonSet updates daemonset, with ondelete rolling update strategy and given version.
-func UpdateDaemonSet(daemonsetname string, image string) error {
-
-	ds, err := GetDaemonsetByName(daemonsetname)
-	if err != nil {
-		fmt.Printf("Unable to read client daemonset: %v\n", err)
-		return err
-	}
-
-	oldData, err := json.Marshal(ds)
-	if err != nil {
-		return err
-	}
-
-	// version := GetVersionFromString(image)
-	//updateVersionLabel(ds, version)
-	ds.Spec.UpdateStrategy.Type = "OnDelete" // TODO: move it to the definition in yaml to make it default
-	ds.Spec.Template.Spec.Containers[0].Image = image
-
-	newJSON, err := json.Marshal(ds)
-	patchbytes, err := strategicpatch.CreateTwoWayMergePatch(oldData, newJSON, v1beta2.DaemonSet{})
-
-	if len(patchbytes) > 2 {
-		updatedDS, err := KubernetesClient.ExtensionsV1beta1().DaemonSets(quobyteNameSpace).Patch(ds.Name, types.StrategicMergePatchType, patchbytes)
-		if err != nil {
-			glog.Errorf("update of client daemonset failed: %v", err)
-			return err
-		}
-		glog.Infof("updated daemonset %s", updatedDS.Name)
-	}
-	return nil
+func GetImageFromDS(ds *appsv1.DaemonSet) string {
+	return ds.Spec.Template.Spec.Containers[0].Image
 }
