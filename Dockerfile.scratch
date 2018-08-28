@@ -1,5 +1,28 @@
-FROM centos:7
-ADD operator /
+FROM golang:1.10.4 as build
+
+WORKDIR /go/src/github.com/quobyte/k8s-operator
+COPY . /go/src/github.com/quobyte/k8s-operator
+
+RUN curl -sLO https://github.com/Masterminds/glide/releases/download/v0.13.1/glide-v0.13.1-linux-amd64.tar.gz  && \
+    tar xfz glide-v0.13.1-linux-amd64.tar.gz && \
+    rm -f glide-v0.13.1-linux-amd64.tar.gz && \
+    mv linux-amd64/glide /usr/local/bin && \
+    chmod +x /usr/local/bin/glide && \
+    glide install --strip-vendor
+
+
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o operator .
+
+
+FROM alpine:3.7
+COPY --from=build /go/src/github.com/quobyte/k8s-operator/operator /operator
+
 COPY ./pkg/artifacts /pkg/artifacts
 COPY ./pkg/web/public /public
-CMD ["/operator"]
+RUN adduser -S -u 1000 quobyte && \
+    chown quobyte /operator && \
+    chown -R quobyte /pkg/artifacts && \
+    chown -R quobyte /public
+USER quobyte
+
+ENTRYPOINT ["/operator"]
