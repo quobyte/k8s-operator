@@ -31,10 +31,8 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Poll file for changes with this period.
-	filePeriod = 10 * time.Second
-	//port to run webserver for quobyte-operator
-	port     string = ":7878"
-	fileName string = utils.StatusFile
+	filePeriod        = 10 * time.Second
+	fileName   string = utils.StatusFile
 )
 
 var (
@@ -195,11 +193,11 @@ func readStatusObject(data []byte, jsonVal bool) []byte {
 
 //StartWebServer Starts webserver on port
 func StartWebServer() {
-	glog.Infof("Starting server on port: %s", port)
+	glog.Infof("Starting server on address: %s", *addr)
 	http.HandleFunc("/", statusHandler)
 	http.HandleFunc("/json", statusHandler)
 	http.HandleFunc("/ws", serveWs)
-	if err := http.ListenAndServe(port, nil); err != nil {
+	if err := http.ListenAndServe(*addr, nil); err != nil {
 		glog.Fatal(err)
 	}
 }
@@ -219,7 +217,7 @@ const homeHTML = `<!DOCTYPE html>
 		Jg0QPyYNVz8mDV8/Jg04AAAAAAAAAAB+SxqHfksa/35LGlgAAAAAAAAAAAAAAAB+Sxqffksa/35LGu8/Jg0oAAAAAAAAAAAAAAAAAAAAAD8mDV9+Sxqffksa/35LGp8AAAAAAAAAAAAAAAAAAAAAAAAA
 		AH5LGlh+Sxr/fksa/35LGvd+Sxq/fksav35LGtd+Sxr/fksa335LGlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8mDU9+Sxq/fksav35LGr9+SxqfPyYNfwAAAAAAAAAAAAAAAAAAAAAA
 		AAAA/H8AAPBvAADHwwAAz4MAAJgZAACxjQAAM8wAADfsAAA37AAAM8wAALGNAACYGQAAz/MAAMfj
-		AADwDwAA/D8AAA==" rel="icon" />  
+		AADwDwAA/D8AAA==" rel="icon" />
     <body>
         <pre id="status">{{.Data}}</pre>
         <script type="text/javascript">
